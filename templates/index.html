@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.0/css/bulma.min.css" integrity="sha512-ADrqa2PY1TZtb/MoLZIZu/Z/LlPaWQeDMBV73EMwjGam43/JJ5fqW38Rq8LJOVGCDfrJeOMS3Q/wRUVzW5DkjQ==" crossorigin="anonymous" />
+    <title>Chat app</title>
+</head>
+<body style="overflow-y:hidden;" class="has-navbar-fixed-bottom">
+
+    <nav class="navbar is-fixed-bottom" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-item is-expanded">
+                <input id="chat_text" type="text" class="input">
+                <a id="chat_btn" class="button is-info">Post</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="content" class="container" style="overflow-y:auto; margin-bottom: 100px;">
+
+        {% for message in messages %}
+        <article class="media">
+            <div class="media-content">
+                <div class="content">
+                    <p>
+                    <strong>{{ message.username }}</strong>
+                    <br> {{ message.message }}
+                    </p>
+                </div>
+            </div>
+        </article>
+
+        {% endfor %}
+
+    </div>
+
+    <div class="modal is-active">
+        <div class="modal-background"></div>
+        <div class="modal-content">
+            <div class="field has-addons">
+                <div class="control is-expanded">
+                    <input type="text" id="username_input" class="input" placeholder="Choose a username">
+                </div>
+                <div class="control">
+                    <a id="start_chat" class="button is-info">Start chatting</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://js.pusher.com/6.0/pusher.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+
+    <script>
+
+        $(function() {
+
+            let username;
+
+            let name = 'Test';
+            let message = 'This is a test message';
+
+
+            $('#start_chat').on('click', function() {
+                username = $('#username_input').val();
+                $('.modal').removeClass('is-active');
+            });
+
+            $('#chat_btn').on('click', function() {
+
+                let message = $('#chat_text').val();
+                $.post('/message', {'username' : username, 'message' : message}, function() {
+                    $('#chat_text').val('');
+
+                });
+            });
+
+           // Enable pusher logging - don't include this in production
+           Pusher.logToConsole = true;
+
+           var pusher = new Pusher('d72d23a77595c3a251f0', {
+             cluster: 'eu'
+           });
+
+           var channel = pusher.subscribe('chat-channel');
+           channel.bind('new-message', function(data) {
+               let name = data.username;
+               let message = data.message;
+               let message_template = `<article class="media">
+                                           <div class="media-content">
+                                               <div class="content">
+                                                   <p>
+                                                       <strong>${name}</strong>
+                                                       <br>${message}
+                                                   </p>
+                                               </div>
+                                           </div>
+                                       </article>`;
+               $('#content').append(message_template);
+               // alert(JSON.stringify(data));
+
+        });
+
+       });
+     </script>
+
+</body>
+</html>
